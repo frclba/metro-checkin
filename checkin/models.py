@@ -30,3 +30,6 @@ class Timesheet(models.Model):
 
     def __str__(self):
         return 'user: ' + str(self.user_id) + ' station ' + str(self.station_id) + ' type: ' + self.entry_type + ' when: ' + str(self.created)
+
+class AvgTravelTime(models.Model):
+    station_id = models.ManyToManyField(Station)
