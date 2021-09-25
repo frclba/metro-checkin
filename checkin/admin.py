@@ -1,8 +1,4 @@
 from django.contrib import admin
-from .models import Rider, Timesheet, Station
+from .models import Record
 
-# Register your models here.
-admin.site.register(Rider)
-admin.site.register(Timesheet)
-admin.site.register(Station)
-
+admin.site.register(Record)

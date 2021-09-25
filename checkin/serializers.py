@@ -1,30 +1,16 @@
 from rest_framework import serializers
-from .models import Rider, Station, Timesheet, AvgTravelTime
+from .models import AvarageTravelTime, Record
 
 
-class RiderSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Rider
-        fields = ('user_id', 'name')
-
-
-class StationSerializer(serializers.ModelSerializer):
+class RecordSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = Station
-        fields = ('station_id', 'name', 'location')
+        model = Record
+        fields = ('user_id', 'station_id', 'action', 'datetime')
 
 
-class TimesheetSerializer(serializers.ModelSerializer):
-
+class AvarageTravelTimeSerializer(serializers.ModelSerializer):
+    
     class Meta:
-        model = Timesheet
-        fields = ('user_id', 'station_id', 'created')
-        
-
-class AvgTravelTimeSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = AvgTravelTime
-        fields = ('station_id', 'station_id')
+        model = AvarageTravelTime
+        fields = ('start_station_id', 'end_station_id')

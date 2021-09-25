@@ -1,155 +1,109 @@
+from statistics import mean
+from .models import Record
 from datetime import datetime
-from time import time
 from rest_framework import generics
-from .models import Rider, Station, Timesheet
-from .serializers import RiderSerializer, StationSerializer, TimesheetSerializer, AvgTravelTimeSerializer
+from .models import Record, AvarageTravelTime
+from .serializers import RecordSerializer, AvarageTravelTimeSerializer
 from rest_framework.response import Response
 
 
-class RiderList(generics.ListCreateAPIView):
-    queryset = Rider.objects.all()
-    serializer_class = RiderSerializer
+class RecordList(generics.ListCreateAPIView):
+    queryset = Record.objects.all()
+    serializer_class = RecordSerializer
 
 
-class RiderDetail(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Rider.objects.all()
-    serializer_class = RiderSerializer
-
-
-class StationList(generics.ListCreateAPIView):
-    queryset = Station.objects.all()
-    serializer_class = StationSerializer
-
-
-class StationDetail(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Station.objects.all()
-    serializer_class = StationSerializer
-
-
-class TimesheetList(generics.ListCreateAPIView):
-    queryset = Timesheet.objects.all()
-    serializer_class = TimesheetSerializer
-
-
-class TimesheetDetail(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Timesheet.objects.all()
-    serializer_class = TimesheetSerializer
+class RecordDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Record.objects.all()
+    serializer_class = RecordSerializer
 
 
 class SwipeIn(generics.ListCreateAPIView):
-    queryset = Timesheet.objects.all()
-    serializer_class = TimesheetSerializer
+    queryset = Record.objects.all()
+    serializer_class = RecordSerializer
 
-    def post(self, request, *args, **kwargs):
-        data = request.data
+    def post(self, request):
+        '''
+            POST for swipe in, given user_id and station_id and time_stamp
+        '''
+        user_id = request.POST.get('user_id')
+        station_id = request.POST.get('station_id')
+        all_records = Record.objects.all()
+        action = 'swipe_in'
+        timestamp = datetime.strptime(request.POST.get(
+            'datetime'), '%Y-%m-%dT%H:%M').replace(tzinfo=None)
 
-        if data['station_id'].find('S') == 0:
-            filtered_station_id = int(data['station_id'].replace('S', ''))
-        else:
-            filtered_station_id = data['station_id']
+        last_record = all_records.filter(user_id=user_id).last()
 
-        if data['user_id'].find('U') == 0:
-            fitered_user_id = int(data['user_id'].replace('U', ''))
-        else:
-            fitered_user_id = data['user_id']
+        if last_record and last_record.action != "swipe_out":
+            return Response('Please swipe out first')
+        if last_record and last_record.datetime.replace(tzinfo=None) >= timestamp:
+            return Response("Can't swipe_in in past")
 
-        station_obj = Station.objects.filter(station_id=filtered_station_id)[0]
-        rider_obj = Rider.objects.filter(user_id=fitered_user_id)[0]
+        record = Record(user_id=user_id, station_id=station_id,
+                        action=action, datetime=timestamp)
 
-        if data['time_stamp'].find('-') == 0:
-            datestring = "%M-%D-%Y %H:%M"
-        else:
-            datestring = "%H:%M"
+        record.save()
 
-        created_time = datetime.strptime(data['time_stamp'], datestring)
-
-        newEntry = Timesheet(
-            user_id=rider_obj,
-            station_id=station_obj,
-            entry_type="swipe_in",
-            created=created_time
-        )
-
-        newEntry.save()
-        return Response('created')
+        return Response("Request done !!")
 
 
 class SwipeOut(generics.ListCreateAPIView):
-    queryset = Timesheet.objects.all()
-    serializer_class = TimesheetSerializer
+    queryset = Record.objects.all()
+    serializer_class = RecordSerializer
 
     def post(self, request):
-        data = request.data
+        '''
+            POST for swipe out, given user_id and station_id and time_stamp
+        '''
+        user_id = request.POST.get('user_id')
+        station_id = request.POST.get('station_id')
+        action = 'swipe_out'
+        timestamp = datetime.strptime(request.POST.get(
+            'datetime'), '%Y-%m-%dT%H:%M').replace(tzinfo=None)
 
-        if data['station_id'].find('S') == 0:
-            filtered_station_id = int(data['station_id'].replace('S', ''))
-        else:
-            filtered_station_id = data['station_id']
+        all_records = Record.objects.all()
+        last_record = all_records.filter(user_id=user_id).last()
 
-        if data['user_id'].find('U') == 0:
-            fitered_user_id = int(data['user_id'].replace('U', ''))
-        else:
-            fitered_user_id = data['user_id']
+        if last_record is None:
+            return Response('Please swipe in first')
+        if last_record.action != "swipe_in":
+            return Response('Please swipe in first')
+        if last_record.datetime.replace(tzinfo=None) >= timestamp:
+            return Response("Can't swipe_out in past")
+        if last_record.station_id == station_id:
+            return Response('Cannot swipe out at the same station you swiped in')
 
-        timestamp = ''
-        if(data['time_stamp']):
-            timestamp = data['time_stamp']
-        else:
-            timestamp = data['created']
+        record = Record(user_id=user_id, station_id=station_id,
+                        action=action, datetime=timestamp)
 
-        datestring = ''
-        if timestamp.find('-') == 0:
-            datestring = "%M-%D-%Y %H:%M"
-        else:
-            datestring = "%H:%M"
+        record.save()
 
-        station_obj = Station.objects.filter(station_id=filtered_station_id)[0]
-        rider_obj = Rider.objects.filter(user_id=fitered_user_id)[0]
-
-        created_time = datetime.strptime(data['time_stamp'], datestring)
-
-        newEntry = Timesheet(
-            user_id=rider_obj,
-            station_id=station_obj,
-            entry_type="swipe_out",
-            created=created_time
-        )
-
-        newEntry.save()
-        return Response('created')
+        return Response("Request done !!")
 
 
 class AvgTravelTime(generics.ListCreateAPIView):
-    queryset = Timesheet.objects.all()
-    serializer_class = AvgTravelTimeSerializer
+    queryset =  AvarageTravelTime.objects.all()
+    serializer_class = AvarageTravelTimeSerializer
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
+        start_station = request.data['start_station_id']
+        end_station = request.data['end_station_id']
+        
+        print(start_station, end_station)
 
-        if request.data['start_station_id'].find('S') == 0:
-            filtered_start_station_id = int(
-                request.data['start_station_id'].replace('S', ''))
-        else:
-            filtered_start_station_id = request.data['start_station_id']
+        travel_times = []
+        for swipe_in in Record.objects.filter(station_id=start_station, action='swipe_in'):
+            swipe_out = get_swipe_out(swipe_in)
+            if swipe_out is not None and swipe_out.station_id == end_station:
+                travel_times.append(
+                    (swipe_out.datetime - swipe_in.datetime).seconds/60)
 
-        if request.data['end_station_id'].find('S') == 0:
-            filtered_end_station_id = int(
-                request.data['end_station_id'].replace('S', ''))
-        else:
-            filtered_end_station_id = request.data['end_station_id']
+        if travel_times == []:
+            return Response('No journeys has been completed between these stations so far')
+        return Response(str(round(mean(travel_times), 2)))
 
-        swipeInsFromFirstReqStation = Timesheet.objects.filter(
-            station_id=filtered_start_station_id).filter(entry_type="swipe_in")
 
-        swipeOutsFromSecondReqStation = Timesheet.objects.filter(
-            station_id=filtered_end_station_id).filter(entry_type="swipe_out")
-
-        datetimeList = []
-        for item in swipeInsFromFirstReqStation:
-            datetimeList.append(item.created)
-        for item in swipeOutsFromSecondReqStation:
-            datetimeList.append(item.created)
-
-        avgTime = datetime.strftime(datetime.fromtimestamp(sum(
-            map(datetime.timestamp, datetimeList))/len(datetimeList)), "%H:%M:%S")
-
-        return Response(avgTime)
+def get_swipe_out(swipe_in):
+    user_swipe_out = Record.objects.filter(
+        user_id=swipe_in.user_id, action='swipe_out', datetime__gt=swipe_in.datetime).first()
+    return user_swipe_out
