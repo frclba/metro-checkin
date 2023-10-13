@@ -1,4 +1,3 @@
-python django backend
 # Requirements
 
 Imagine a subway train system where riders have to swipe to enter a station, and swipe to exit a station when they leave. In this system, every rider has an integer user_id and every station has an integer station_id. 
