@@ -8,15 +8,13 @@ The goal is to create a system to track when riders enter and leave stations, an
 - GET average time, given start_station_id, and end_station_id.
 - the return value can either be a time duration format of HH:MM:SS, or just an integer for minutes
 
-Please develop a Django webserver that supports the functionality above, deploy it anywhere that you like (aws, google cloud, heroku, etc), and provide:
-- the server url to send requests to. 
-- the url to the repo (github/gitlab/etc)
+Please develop a webserver that supports the functionality above and provide the url to the repo with source code
 
 Please let us know if you have any questions that we can help clarify!
 
+Example: 
 
-
-Example: One subway ride for 20m, and another for 10m, averages to 15m
+One subway ride for 20m, and another for 10m, averages to 15m
 POST swipe_in (U1, S1, 11:00)
 POST swipe_out (U1, S3, 11:20) 
 POST swipe_in (U2, S1, 11:30)
