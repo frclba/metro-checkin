@@ -8,10 +8,7 @@ The goal is to create a system to track when riders enter and leave stations, an
 - GET average time, given start_station_id, and end_station_id.
 - the return value can either be a time duration format of HH:MM:SS, or just an integer for minutes
 
-Please develop a webserver that supports the functionality above and provide the url to the repo with source code
-
-Please let us know if you have any questions that we can help clarify!
-
+Please develop a python webserver that supports the functionality above and provide the url to the repo with source code
 Example: 
 
 One subway ride for 20m, and another for 10m, averages to 15m
